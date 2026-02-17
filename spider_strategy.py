@@ -53,6 +53,8 @@ class SpiderStrategy:
         self.avg_price = 0
         self.total_volume = 0
         self.running = True
+        self.stop_reason = None  # دلیل توقف (برای نمایش به کاربر)
+        self.consecutive_zero_volume = 0  # 5-strike counter before kill
         self.last_pyramid_price = 0 # آخرین قیمتی که در آن حجم اضافه شده (Pyramiding)
 
         # استاپ لاس متحرک (Chandelier Exit)
@@ -126,6 +128,7 @@ class SpiderStrategy:
                 order = await self.place_order(current_price, self.base_order_size)
                 if not order:
                     logger.error(f"Failed to place initial order for {self.symbol}. Stopping strategy.")
+                    self.stop_reason = "خطا در ثبت اردر اولیه"
                     self.running = False
                     return
 
@@ -162,6 +165,7 @@ class SpiderStrategy:
             await self.sync_with_exchange()
         except Exception as e:
             logger.error(f"Error initializing strategy: {e}")
+            self.stop_reason = str(e)[:100] if str(e) else "خطا در راه‌اندازی"
             self.running = False
             raise e
 
@@ -202,6 +206,7 @@ class SpiderStrategy:
                     return
 
                 logger.warning(f"SYNC: Position for {self.symbol} is closed on exchange (5 Strikes). Stopping strategy.")
+                self.stop_reason = "پوزیشن روی صرافی بسته شده (۵ بار چک)"
                 self.running = False
                 if self.db_manager and self.strategy_id:
                     self.db_manager.delete_strategy(self.strategy_id)
@@ -362,11 +367,18 @@ class SpiderStrategy:
         if self.total_volume == 0:
              await self.sync_with_exchange()
              if self.total_volume == 0:
-                 logger.warning(f"Strategy {self.symbol} has 0 volume after sync. Stopping.")
+                 self.consecutive_zero_volume = getattr(self, 'consecutive_zero_volume', 0) + 1
+                 if self.consecutive_zero_volume < 5:
+                     logger.warning(f"Strategy {self.symbol} has 0 volume after sync. Strike {self.consecutive_zero_volume}/5. Waiting...")
+                     return
+                 logger.warning(f"Strategy {self.symbol} has 0 volume after 5 sync attempts. Stopping.")
+                 self.stop_reason = "حجم صفر بعد از ۵ بار همگام‌سازی با صرافی"
                  self.running = False
                  if self.db_manager and self.strategy_id:
                      self.db_manager.delete_strategy(self.strategy_id)
                  return
+        else:
+            self.consecutive_zero_volume = 0
         
         await self.sync_with_exchange()
 
@@ -535,6 +547,7 @@ class SpiderStrategy:
             except Exception as e:
                 logger.error(f"Error saving history/notifying: {e}")
 
+            self.stop_reason = reason if getattr(self, 'stop_reason', None) is None else self.stop_reason
             self.running = False
             if self.db_manager and self.strategy_id:
                 self.db_manager.delete_strategy(self.strategy_id)

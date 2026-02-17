@@ -472,9 +472,11 @@ class TradingBot:
             
             if update:
                 try:
-                    reason_msg = f"\n❌ علت: {stop_reason}" if stop_reason else ""
+                    # Use strategy.stop_reason (Persian) if set, else exception message
+                    reason = getattr(strategy, 'stop_reason', None) or stop_reason
+                    reason_msg = f"\n❌ علت: {reason}" if reason else ""
                     await update.effective_message.reply_text(f"🛑 ربات برای {strategy.symbol} متوقف شد.{reason_msg}")
-                except:
+                except Exception:
                     pass
 
     async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -498,7 +500,7 @@ class TradingBot:
                 if is_forex:
                     filtered_strategies[key] = strategy
 
-        msg = f"📊 **وضعیت ربات‌های فعال ({mode}):**\n\n"
+        msg = f"📊 <b>وضعیت ربات‌های فعال ({mode}):</b>\n\n"
         keyboard = []
         
         if not filtered_strategies:
@@ -560,7 +562,7 @@ class TradingBot:
             await update.effective_message.reply_text(f"❌ Error: {e}")
 
     async def _show_crypto_positions(self, update, context):
-        msg = "🏦 **Crypto Open Positions (CoinEx):**\n\n"
+        msg = "🏦 <b>Crypto Open Positions (CoinEx):</b>\n\n"
         has_pos = False
         keyboard = []
         
@@ -641,7 +643,7 @@ class TradingBot:
             await update.effective_message.reply_text(f"❌ خطا در اتصال به MT5: {e}")
             return
 
-        msg = "🌍 **Forex Open Positions (MetaTrader 5):**\n\n"
+        msg = "🌍 <b>Forex Open Positions (MetaTrader 5):</b>\n\n"
         positions = mt5.positions_get()
         has_pos = False
         keyboard = []
@@ -696,8 +698,14 @@ class TradingBot:
                 if target_pos:
                     side = 'buy' if target_pos['side'] == 'short' else 'sell'
                     amount = float(target_pos.get('contracts', 0) or 1)
-                    # Fix: Use async_run for create_order
-                    await asyncio.to_thread(self.futures_exchange.create_order, symbol, 'market', side, amount)
+                    for _attempt in range(3):
+                        try:
+                            await asyncio.to_thread(self.futures_exchange.create_order, symbol, 'market', side, amount)
+                            break
+                        except Exception as _e:
+                            logger.warning(f"Close futures attempt {_attempt+1}/3 failed for {symbol}: {_e}")
+                            if _attempt < 2: await asyncio.sleep(2)
+                            else: raise
                     await update.effective_message.reply_text(f"✅ پوزیشن فیوچرز {symbol} بسته شد.")
                     asyncio.create_task(self.take_equity_snapshot())
                 else:
@@ -710,8 +718,14 @@ class TradingBot:
                 base_currency = symbol_raw.replace('USDT', '')
                 if base_currency in balance.get('free', {}) and balance['free'][base_currency] > 0:
                     amount = balance['free'][base_currency]
-                    # Fix: Use async_run for create_order
-                    await asyncio.to_thread(self.spot_exchange.create_order, symbol_raw, 'market', 'sell', amount)
+                    for _attempt in range(3):
+                        try:
+                            await asyncio.to_thread(self.spot_exchange.create_order, symbol_raw, 'market', 'sell', amount)
+                            break
+                        except Exception as _e:
+                            logger.warning(f"Close spot attempt {_attempt+1}/3 failed for {symbol_raw}: {_e}")
+                            if _attempt < 2: await asyncio.sleep(2)
+                            else: raise
                     await update.effective_message.reply_text(f"✅ دارایی اسپات {base_currency} ({amount}) فروخته شد.")
                     asyncio.create_task(self.take_equity_snapshot())
                 else:
@@ -814,23 +828,23 @@ class TradingBot:
         emoji = "🟢" if total_pnl >= 0 else "🔴"
         
         msg = (
-            f"📈 **گزارش سود و ضرر ({period})**\n"
-            f"⏱ شروع: `{start_time}`\n\n"
-            f"💰 **موجودی کل:** `{equity_now * rate:.2f} {currency}`\n"
-            f"   ▫️ اسپات: `{spot_now * rate:.2f}`\n"
-            f"   ▫️ فیوچرز: `{futures_now * rate:.2f}`\n\n"
-            f"📊 **تغییرات کل (Equity-based):**\n"
-            f"   ▫️ مقدار: `{total_pnl * rate:+.2f} {currency}` {emoji}\n"
-            f"   ▫️ درصد: `{pnl_percent:+.2f}%`\n\n"
-            f"💸 **جزئیات معاملات:**\n"
-            f"   ▫️ کارمزدها: `{breakdown['fees'] * rate:.2f} {currency}`\n"
-            f"   ▫️ فاندینگ: `{breakdown['funding'] * rate:+.2f} {currency}`\n\n"
-            f"🕒 **سود/ضرر باز (Unrealized):**\n"
-            f"   ▫️ `{unrealized_now * rate:+.2f} {currency}`\n\n"
-            f"💡 *نکته: این گزارش بر اساس تغییر کل ارزش دارایی‌های شما (Equity) محاسبه شده است.*"
+            f"📈 <b>گزارش سود و ضرر ({period})</b>\n"
+            f"⏱ شروع: <code>{start_time}</code>\n\n"
+            f"💰 <b>موجودی کل:</b> <code>{equity_now * rate:.2f} {currency}</code>\n"
+            f"   ▫️ اسپات: <code>{spot_now * rate:.2f}</code>\n"
+            f"   ▫️ فیوچرز: <code>{futures_now * rate:.2f}</code>\n\n"
+            f"📊 <b>تغییرات کل (Equity-based):</b>\n"
+            f"   ▫️ مقدار: <code>{total_pnl * rate:+.2f} {currency}</code> {emoji}\n"
+            f"   ▫️ درصد: <code>{pnl_percent:+.2f}%</code>\n\n"
+            f"💸 <b>جزئیات معاملات:</b>\n"
+            f"   ▫️ کارمزدها: <code>{breakdown['fees'] * rate:.2f} {currency}</code>\n"
+            f"   ▫️ فاندینگ: <code>{breakdown['funding'] * rate:+.2f} {currency}</code>\n\n"
+            f"🕒 <b>سود/ضرر باز (Unrealized):</b>\n"
+            f"   ▫️ <code>{unrealized_now * rate:+.2f} {currency}</code>\n\n"
+            f"💡 <i>نکته: این گزارش بر اساس تغییر کل ارزش دارایی‌های شما (Equity) محاسبه شده است.</i>"
         )
         
-        await update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+        await update.effective_message.reply_text(msg, parse_mode=ParseMode.HTML)
 
     async def balance_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
@@ -843,14 +857,14 @@ class TradingBot:
             futures_total = futures_bal.get('USDT', {}).get('total', 0)
             
             msg = (
-                "💰 **گزارش موجودی (USDT):**\n\n"
-                f"🔵 **Spot Free:** `{spot_usdt:.2f}` USDT\n"
-                f"🟠 **Futures Free:** `{futures_usdt:.2f}` USDT\n"
-                f"🔒 **Futures Locked:** `{futures_used:.2f}` USDT\n"
-                f"📈 **Futures Total:** `{futures_total:.2f}` USDT\n\n"
+                "💰 <b>گزارش موجودی (USDT):</b>\n\n"
+                f"🔵 <b>Spot Free:</b> <code>{spot_usdt:.2f}</code> USDT\n"
+                f"🟠 <b>Futures Free:</b> <code>{futures_usdt:.2f}</code> USDT\n"
+                f"🔒 <b>Futures Locked:</b> <code>{futures_used:.2f}</code> USDT\n"
+                f"📈 <b>Futures Total:</b> <code>{futures_total:.2f}</code> USDT\n\n"
                 "💡 اگر موجودی Futures Free کمتر از مبلغ معامله (ضربدر اهرم) باشد، معامله باز نخواهد شد."
             )
-            await update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+            await update.effective_message.reply_text(msg, parse_mode=ParseMode.HTML)
         except Exception as e:
             await update.effective_message.reply_text(f"❌ خطا در دریافت موجودی: {e}")
 
@@ -885,9 +899,9 @@ class TradingBot:
             'strategy_type': 'GLN'
         }
         
-        msg = ("🧪 **سیگنال آزمایشی (Test)**\n"
+        msg = ("🧪 <b>سیگنال آزمایشی (Test)</b>\n"
                "این یک پیام تست برای بررسی دکمه‌ها و ویزارد است.\n"
-               "🛠 **Debug: GLN-V2-Buffered**")
+               "🛠 <b>Debug: GLN-V2-Buffered</b>")
         
         await self.send_telegram_message(msg, signal_data=test_data)
         await update.effective_message.reply_text("✅ سیگنال تست ارسال شد. دکمه پایین پیام را فشار دهید تا ویزارد اجرا شود.")
@@ -910,7 +924,7 @@ class TradingBot:
         for sid, gln in self.gln_strategies.items():
             try:
                 status_msg = await gln.get_status()
-                await update.effective_message.reply_text(status_msg, parse_mode=ParseMode.MARKDOWN)
+                await update.effective_message.reply_text(status_msg, parse_mode=ParseMode.HTML)
             except Exception as e:
                 logger.error(f"Error getting status for {sid}: {e}")
                 await update.effective_message.reply_text(f"❌ خطا در خواندن وضعیت `{sid}`: {e}")
@@ -1240,9 +1254,9 @@ class TradingBot:
 
                         # Format Opportunity
                         opp_text = (
-                            f"**{symbol}** | `{price}`\n"
+                            f"<b>{symbol}</b> | <code>{price}</code>\n"
                             f"{'🟢 LONG' if state == 'UPTREND' else '🔴 SHORT'} | RSI: {rsi:.1f} | AI: {int(confidence*100)}%\n"
-                            f"🎯 Target (AI): `{prediction:.6f}` | Score: `{score:.1f}`"
+                            f"🎯 Target (AI): <code>{prediction:.6f}</code> | Score: <code>{score:.1f}</code>"
                         )
                         
                         # Generate Keyboard for this opportunity
@@ -1296,7 +1310,7 @@ class TradingBot:
             opportunities_medium.sort(key=lambda x: x[0], reverse=True)
             overview.sort(key=lambda x: x['score'], reverse=True)
 
-            final_msg = "🔭 **گزارش اسکنر هوشمند Spider**\n━━━━━━━━━━━━━━\n\n"
+            final_msg = "🔭 <b>گزارش اسکنر هوشمند Spider</b>\n━━━━━━━━━━━━━━\n\n"
             
             # Ensure lists are iterable (never None)
             opportunities_strong = opportunities_strong or []
@@ -1304,13 +1318,13 @@ class TradingBot:
             overview = overview or []
             
             if opportunities_strong:
-                final_msg += "🔥 **سیگنال‌های Sniper (Strong):**\n"
+                final_msg += "🔥 <b>سیگنال‌های Sniper (Strong):</b>\n"
                 for _, text, _ in opportunities_strong[:3]: # Show top 3 texts
                     final_msg += f"{text}\n\n"
                 final_msg += "━━━━━━━━━━━━━━\n"
             
             if opportunities_medium:
-                final_msg += "⚠️ **سیگنال‌های کاندیدا (Medium):**\n"
+                final_msg += "⚠️ <b>سیگنال‌های کاندیدا (Medium):</b>\n"
                 for _, text, _ in opportunities_medium[:3]:
                     final_msg += f"{text}\n\n"
                 final_msg += "━━━━━━━━━━━━━━\n"
@@ -1323,7 +1337,7 @@ class TradingBot:
                     valid_overview = [x for x in overview if x.get('state') != 'ERROR']
                     if not valid_overview:
                         # All failed - show error info
-                        final_msg += "⚠️ **خطا در اسکن تمام نمادها:**\n"
+                        final_msg += "⚠️ <b>خطا در اسکن تمام نمادها:</b>\n"
                         error_reasons = stats.get("errors_reasons", {})
                         for reason, count in list(error_reasons.items())[:3]:
                             final_msg += f"  • {reason}: {count} نماد\n"
@@ -1331,22 +1345,22 @@ class TradingBot:
                     else:
                         # Sort overview by score descending
                         top5 = sorted(valid_overview, key=lambda x: x.get('score', 0), reverse=True)[:5]
-                        final_msg += "📊 **برترین نمادها (بدون سیگنال قوی):**\n"
+                        final_msg += "📊 <b>برترین نمادها (بدون سیگنال قوی):</b>\n"
                         for i, item in enumerate(top5, 1):
                             sym = item.get('raw_symbol', item.get('symbol', '?'))
                             score = item.get('score', 0)
                             state = item.get('state', '?')
                             rsi = item.get('rsi', 0)
                             ai = item.get('ai', 0)
-                            final_msg += f"{i}. `{sym}` — امتیاز: {score:.1f} | روند: {state} | RSI: {rsi:.1f} | AI: {ai}%\n"
+                            final_msg += f"{i}. <code>{sym}</code> — امتیاز: {score:.1f} | روند: {state} | RSI: {rsi:.1f} | AI: {ai}%\n"
                         best_score = max((x.get('score', 0) for x in valid_overview), default=0)
                         final_msg += f"\n📈 اسکن‌شده: {stats.get('success', 0)} | آستانه قوی: 0.55 | بهترین امتیاز: {best_score:.1f}\n\n"
             
             # ALWAYS show Top 5 candidates (even if signals exist)
             if overview and (opportunities_strong or opportunities_medium):
-                final_msg += "📋 **برترین کاندیداها (Top 5):**\n"
+                final_msg += "📋 <b>برترین کاندیداها (Top 5):</b>\n"
                 for item in overview[:5]:
-                    final_msg += f"{item['emoji']} `{item['raw_symbol']}`: {item['state']} | RSI: {item['rsi']:.1f} | AI: {item['ai']}% | Score: {item['score']:.1f}\n"
+                    final_msg += f"{item['emoji']} <code>{item['raw_symbol']}</code>: {item['state']} | RSI: {item['rsi']:.1f} | AI: {item['ai']}% | Score: {item['score']:.1f}\n"
                 final_msg += "\n"
             elif not overview:
                 # Fallback if overview is empty
@@ -1361,16 +1375,16 @@ class TradingBot:
             
             final_msg += (
                 f"\n━━━━━━━━━━━━━━\n"
-                f"📋 **آمـار اسکن:**\n"
-                f"🔹 کل ارزها: `{stats['total']}` | ✅ موفق: `{stats['success']}`\n"
-                f"❌ خطا/ناشناخته: `{stats['error']}`\n"
+                f"📋 <b>آمـار اسکن:</b>\n"
+                f"🔹 کل ارزها: <code>{stats['total']}</code> | ✅ موفق: <code>{stats['success']}</code>\n"
+                f"❌ خطا/ناشناخته: <code>{stats['error']}</code>\n"
                 f"━━━━━━━━━━━━━━\n"
-                f"🔍 **DBG:** tickers={tickers_count} scanned={symbols_scanned} strong>={strong_threshold} med>={med_threshold} best={best_score:.1f}\n"
+                f"🔍 <b>DBG:</b> tickers={tickers_count} scanned={symbols_scanned} strong>={strong_threshold} med>={med_threshold} best={best_score:.1f}\n"
             )
             
             if stats["errors_reasons"]:
                 top_reason = max(stats["errors_reasons"], key=stats["errors_reasons"].get)
-                final_msg += f"⚠️ دلیل اصلی خطا: `{top_reason}`\n"
+                final_msg += f"⚠️ دلیل اصلی خطا: <code>{top_reason}</code>\n"
 
             # UI Buttons
             # Generate combined keyboard for top opportunities + navigation
@@ -1394,7 +1408,7 @@ class TradingBot:
                 InlineKeyboardButton("🔙 بازگشت", callback_data="switch_mode")
             ])
             
-            await status_msg.edit_text(final_msg, reply_markup=InlineKeyboardMarkup(kb_final), parse_mode=ParseMode.MARKDOWN)
+            await status_msg.edit_text(final_msg, reply_markup=InlineKeyboardMarkup(kb_final), parse_mode=ParseMode.HTML)
 
         except Exception as e:
             logger.error(f"Global Scan Error: {e}", exc_info=True)
@@ -1417,8 +1431,8 @@ class TradingBot:
                 strat.auto_mode = True
                 count += 1
         
-        msg = f"✅ **حالت خودکار فعال شد**\nتعداد استراتژی‌های تحت تاثیر: {count}"
-        await update.message.reply_text(msg, parse_mode='Markdown')
+        msg = f"✅ <b>حالت خودکار فعال شد</b>\nتعداد استراتژی‌های تحت تاثیر: {count}"
+        await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
         logger.info(f"AUTO_MODE: Enabled by admin for {count} strategies.")
 
     async def cmd_auto_off(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1431,8 +1445,8 @@ class TradingBot:
                 strat.auto_mode = False
                 count += 1
         
-        msg = f"❌ **حالت خودکار خاموش شد**\nتعداد استراتژی‌های تحت تاثیر: {count}\nتریدها فقط با تایید دستی انجام می‌شوند."
-        await update.message.reply_text(msg, parse_mode='Markdown')
+        msg = f"❌ <b>حالت خودکار خاموش شد</b>\nتعداد استراتژی‌های تحت تاثیر: {count}\nتریدها فقط با تایید دستی انجام می‌شوند."
+        await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
         logger.info(f"AUTO_MODE: Disabled by admin for {count} strategies.")
 
     async def hybrid_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1441,7 +1455,7 @@ class TradingBot:
         
         args = context.args
         if len(args) < 3:
-            await update.message.reply_text("❌ فرمت اشتباه!\nاستفاده: `/hybrid SYMBOL AMOUNT LEV`", parse_mode='Markdown')
+            await update.message.reply_text("❌ فرمت اشتباه!\nاستفاده: <code>/hybrid SYMBOL AMOUNT LEV</code>", parse_mode=ParseMode.HTML)
             return
             
         symbol, amount, lev = args[0].upper(), float(args[1]), int(args[2])
@@ -1449,7 +1463,7 @@ class TradingBot:
         
         res, msg = await self.start_gln_hybrid(symbol, amount, lev)
         if res:
-            await update.message.reply_text(f"🚀 **استراتژی GLN Hybrid برای {symbol} شروع شد.**\nID: `{msg}`", parse_mode='Markdown')
+            await update.message.reply_text(f"🚀 <b>استراتژی GLN Hybrid برای {symbol} شروع شد.</b>\nID: <code>{msg}</code>", parse_mode=ParseMode.HTML)
         else:
             await update.message.reply_text(f"❌ خطا: {msg}")
 
@@ -1721,7 +1735,7 @@ class TradingBot:
             [InlineKeyboardButton("۹۰ روز اخیر", callback_data="qstats_90")]
         ]
         await update.effective_message.reply_text(
-            "📊 **گزارش نرخ موفقیت کانال Q**\nیکی از بازه‌های زمانی زیر را انتخاب کنید:",
+            "📊 <b>گزارش نرخ موفقیت کانال Q</b>\nیکی از بازه‌های زمانی زیر را انتخاب کنید:",
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode=ParseMode.HTML
         )
@@ -2096,7 +2110,14 @@ class TradingBot:
                         if target_pos:
                             amount = float(target_pos['contracts'])
                             close_side = 'sell' if side_raw.upper() == 'LONG' else 'buy'
-                            await asyncio.to_thread(self.futures_exchange.create_order, symbol, 'market', close_side, amount, params={'reduceOnly': True})
+                            for _attempt in range(3):
+                                try:
+                                    await asyncio.to_thread(self.futures_exchange.create_order, symbol, 'market', close_side, amount, params={'reduceOnly': True})
+                                    break
+                                except Exception as _e:
+                                    logger.warning(f"Close position attempt {_attempt+1}/3 failed for {symbol}: {_e}")
+                                    if _attempt < 2: await asyncio.sleep(2)
+                                    else: raise
                             await query.message.reply_text(f"✅ پوزیشن {symbol} (خارج از ربات) بسته شد.")
                         else:
                             await query.message.reply_text(f"⚠️ پوزیشنی برای {symbol} پیدا نشد.")
@@ -2129,7 +2150,14 @@ class TradingBot:
                     balance = await asyncio.to_thread(self.spot_exchange.fetch_balance)
                     amount = balance.get('free', {}).get(curr, 0)
                     if amount > 0:
-                        await asyncio.to_thread(self.spot_exchange.create_order, symbol, 'market', 'sell', amount)
+                        for _attempt in range(3):
+                            try:
+                                await asyncio.to_thread(self.spot_exchange.create_order, symbol, 'market', 'sell', amount)
+                                break
+                            except Exception as _e:
+                                logger.warning(f"Sell spot attempt {_attempt+1}/3 failed for {symbol}: {_e}")
+                                if _attempt < 2: await asyncio.sleep(2)
+                                else: raise
                         await query.message.reply_text(f"✅ مقدار {amount} {curr} به USDT تبدیل شد.")
                     else:
                         await query.message.reply_text(f"⚠️ موجودی کافی نیست.")
@@ -2440,7 +2468,7 @@ class TradingBot:
                             }
                             mt5.order_send(request)
                         trade['is_breakeven'] = True
-                        await self.send_telegram_message(f"🛡 **Stop Loss ANK ({symbol})**\nقیمت به هدف ۲ رسید. حد ضرر به نقطه ورود منتقل شد (Break-even).")
+                        await self.send_telegram_message(f"🛡 <b>Stop Loss ANK ({symbol})</b>\nقیمت به هدف ۲ رسید. حد ضرر به نقطه ورود منتقل شد (Break-even).")
                 
                 await asyncio.sleep(60)
             except Exception as e:
@@ -2450,64 +2478,97 @@ class TradingBot:
     # --- NEW TRADE WIZARD (CONVERSATION HANDLERS) ---
     async def wiz_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Entry point for the Trade Wizard."""
-        context.user_data["trade_wizard"] = {}
-        keyboard = [
-            [InlineKeyboardButton("💎 Spot (نقدی)", callback_data="TRD|MARKET|spot")],
-            [InlineKeyboardButton("🚀 Futures (فیوچرز)", callback_data="TRD|MARKET|future")],
-            [InlineKeyboardButton("🌍 Forex (فارکس)", callback_data="TRD|MARKET|forex")],
-            [InlineKeyboardButton("❌ انصراف", callback_data="TRD|CANCEL")]
-        ]
-        msg = "🛰 **گام ۱: انتخاب بازار**\n\nلطفاً مارکتی که قصد معامله در آن را دارید انتخاب کنید:"
-        
-        # Check if called from a button or command
-        if update.callback_query:
-            await update.callback_query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
-        else:
-            await update.effective_message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
-        
-        return WIZ_MARKET
+        try:
+            context.user_data["trade_wizard"] = {}
+            keyboard = [
+                [InlineKeyboardButton("💎 Spot (نقدی)", callback_data="TRD|MARKET|spot")],
+                [InlineKeyboardButton("🚀 Futures (فیوچرز)", callback_data="TRD|MARKET|future")],
+                [InlineKeyboardButton("🌍 Forex (فارکس)", callback_data="TRD|MARKET|forex")],
+                [InlineKeyboardButton("❌ انصراف", callback_data="TRD|CANCEL")]
+            ]
+            msg = "🛰 <b>گام ۱: انتخاب بازار</b>\n\nلطفاً مارکتی که قصد معامله در آن را دارید انتخاب کنید:"
+            
+            if update.callback_query:
+                await update.callback_query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
+            else:
+                await update.effective_message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
+            
+            return WIZ_MARKET
+        except Exception as e:
+            logger.error(f"Trade wizard wiz_start error: {e}", exc_info=True)
+            try:
+                await update.effective_message.reply_text(f"❌ خطا در ویزارد معامله: {e}\nلطفاً دوباره 🚀 معامله جدید را بزنید.")
+            except Exception:
+                pass
+            context.user_data.pop("trade_wizard", None)
+            return ConversationHandler.END
 
     async def wiz_market(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await query.answer()
-        market = query.data.split('|')[2]
-        context.user_data["trade_wizard"]["market"] = market
-        
-        # Next Step: Symbol
-        symbols = ["BTC/USDT", "ETH/USDT", "SOL/USDT"] if market != 'forex' else ["XAUUSD", "EURUSD", "GBPUSD"]
-        keyboard = []
-        row = []
-        for s in symbols:
-            row.append(InlineKeyboardButton(s, callback_data=f"TRD|SYMBOL|{s}"))
-            if len(row) == 2:
-                keyboard.append(row)
-                row = []
-        if row: keyboard.append(row)
-        
-        keyboard.append([InlineKeyboardButton("🔍 جستجوی نماد دیگر", callback_data="TRD|SYMBOL|SEARCH")])
-        keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data="TRD|BACK|MARKET"), InlineKeyboardButton("❌ لغو", callback_data="TRD|CANCEL")])
-        
-        msg = f"🛰 **گام ۲: انتخاب نماد ({market.upper()})**\n\nلطفاً یک نماد انتخاب کنید یا دکمه جستجو را بزنید:"
-        await query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
-        return WIZ_SYMBOL
+        try:
+            query = update.callback_query
+            await query.answer()
+            market = query.data.split('|')[2]
+            context.user_data["trade_wizard"]["market"] = market
+            
+            symbols = ["BTC/USDT", "ETH/USDT", "SOL/USDT"] if market != 'forex' else ["XAUUSD", "EURUSD", "GBPUSD"]
+            keyboard = []
+            row = []
+            for s in symbols:
+                row.append(InlineKeyboardButton(s, callback_data=f"TRD|SYMBOL|{s}"))
+                if len(row) == 2:
+                    keyboard.append(row)
+                    row = []
+            if row: keyboard.append(row)
+            
+            keyboard.append([InlineKeyboardButton("🔍 جستجوی نماد دیگر", callback_data="TRD|SYMBOL|SEARCH")])
+            keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data="TRD|BACK|MARKET"), InlineKeyboardButton("❌ لغو", callback_data="TRD|CANCEL")])
+            
+            msg = f"🛰 <b>گام ۲: انتخاب نماد ({market.upper()})</b>\n\nلطفاً یک نماد انتخاب کنید یا دکمه جستجو را بزنید:"
+            await query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
+            return WIZ_SYMBOL
+        except Exception as e:
+            logger.error(f"Trade wizard wiz_market error: {e}", exc_info=True)
+            try:
+                await update.effective_message.reply_text(f"❌ خطا در ویزارد معامله: {e}")
+            except Exception:
+                pass
+            context.user_data.pop("trade_wizard", None)
+            return ConversationHandler.END
 
     async def wiz_symbol(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await query.answer()
-        val = query.data.split('|')[2]
-        
-        if val == "SEARCH":
-            await query.edit_message_text("🔍 لطفاً نام نماد را تایپ کنید (مثلاً BTCUSDT یا XAUUSD):")
-            return WIZ_CUSTOM_SYMBOL
-        
-        context.user_data["trade_wizard"]["symbol"] = val
-        return await self._wiz_show_side(update, context)
+        try:
+            query = update.callback_query
+            await query.answer()
+            val = query.data.split('|')[2]
+            
+            if val == "SEARCH":
+                await query.edit_message_text("🔍 لطفاً نام نماد را تایپ کنید (مثلاً BTCUSDT یا XAUUSD):")
+                return WIZ_CUSTOM_SYMBOL
+            
+            context.user_data["trade_wizard"]["symbol"] = val
+            return await self._wiz_show_side(update, context)
+        except Exception as e:
+            logger.error(f"Trade wizard wiz_symbol error: {e}", exc_info=True)
+            try:
+                await update.effective_message.reply_text(f"❌ خطا در ویزارد معامله: {e}")
+            except Exception:
+                pass
+            context.user_data.pop("trade_wizard", None)
+            return ConversationHandler.END
 
     async def wiz_symbol_search(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        symbol = update.message.text.upper().replace("/", "")
-        # Basic validation could be added here
-        context.user_data["trade_wizard"]["symbol"] = symbol
-        return await self._wiz_show_side(update, context)
+        try:
+            symbol = update.message.text.upper().replace("/", "")
+            context.user_data["trade_wizard"]["symbol"] = symbol
+            return await self._wiz_show_side(update, context)
+        except Exception as e:
+            logger.error(f"Trade wizard wiz_symbol_search error: {e}", exc_info=True)
+            try:
+                await update.effective_message.reply_text(f"❌ خطا در ویزارد معامله: {e}")
+            except Exception:
+                pass
+            context.user_data.pop("trade_wizard", None)
+            return ConversationHandler.END
 
     async def handle_trade_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handler for 'trade:' prefix from scan results. Jumps directly to margin selection."""
@@ -2540,7 +2601,7 @@ class TradingBot:
             [InlineKeyboardButton("🔴 SHORT / SELL", callback_data="TRD|SIDE|sell")],
             [InlineKeyboardButton("🔙 بازگشت", callback_data="TRD|BACK|SYMBOL"), InlineKeyboardButton("❌ لغو", callback_data="TRD|CANCEL")]
         ]
-        msg = f"🛰 **گام ۳: انتخاب جهت ({data['symbol']})**\n\nخلاصه: {data['market'].upper()} | {data['symbol']}\n\nجهت معامله را انتخاب کنید:"
+        msg = f"🛰 <b>گام ۳: انتخاب جهت ({data['symbol']})</b>\n\nخلاصه: {data['market'].upper()} | {data['symbol']}\n\nجهت معامله را انتخاب کنید:"
         if update.callback_query:
             await update.callback_query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
         else:
@@ -2548,11 +2609,20 @@ class TradingBot:
         return WIZ_SIDE
 
     async def wiz_side(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await query.answer()
-        side = query.data.split('|')[2]
-        context.user_data["trade_wizard"]["side"] = side
-        return await self._wiz_show_margin(update, context, side)
+        try:
+            query = update.callback_query
+            await query.answer()
+            side = query.data.split('|')[2]
+            context.user_data["trade_wizard"]["side"] = side
+            return await self._wiz_show_margin(update, context, side)
+        except Exception as e:
+            logger.error(f"Trade wizard wiz_side error: {e}", exc_info=True)
+            try:
+                await update.effective_message.reply_text(f"❌ خطا در ویزارد معامله: {e}")
+            except Exception:
+                pass
+            context.user_data.pop("trade_wizard", None)
+            return ConversationHandler.END
 
     async def _wiz_show_margin(self, update: Update, context: ContextTypes.DEFAULT_TYPE, side: str):
         """Displays margin selection keyboard. Centralized for reuse."""
@@ -2571,7 +2641,7 @@ class TradingBot:
         
         data = context.user_data["trade_wizard"]
         emoji = "🟢" if side == 'buy' else "🔴"
-        msg = f"🛰 **گام ۴: انتخاب مارجین (USDT)**\n\nخلاصه: {data['symbol']} | {emoji} {side.upper()}\n\nچه مقدار مارجین درگیر شود؟"
+        msg = f"🛰 <b>گام ۴: انتخاب مارجین (USDT)</b>\n\nخلاصه: {data['symbol']} | {emoji} {side.upper()}\n\nچه مقدار مارجین درگیر شود؟"
         
         if update.callback_query:
             await update.callback_query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
@@ -2626,7 +2696,7 @@ class TradingBot:
         # Fetch allowed leverages from ExecutionEngine
         res = await self.execution_engine.get_allowed_leverages(symbol, margin, market_type=data["market"])
         if not res["success"]:
-            msg = f"❌ **خطا در مارجین:**\n{res.get('reason', 'خطا در محاسبه اهرم')}"
+            msg = f"❌ <b>خطا در مارجین:</b>\n{res.get('reason', 'خطا در محاسبه اهرم')}"
             keyboard = [[InlineKeyboardButton("🔙 تغییر مارجین", callback_data="TRD|BACK|SIDE")], [InlineKeyboardButton("❌ لغو", callback_data="TRD|CANCEL")]]
             if update.callback_query: await update.callback_query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard))
             else: await update.effective_message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard))
@@ -2646,7 +2716,7 @@ class TradingBot:
         
         emoji = "🟢" if data['side'] == 'buy' else "🔴"
         msg = (
-            f"🛰 **گام ۵: انتخاب اهرم (Leverage)**\n\n"
+            f"🛰 <b>گام ۵: انتخاب اهرم (Leverage)</b>\n\n"
             f"خلاصه: {data['symbol']} | {emoji} {data['side'].upper()} | ${data['margin']}\n"
             f"حداقل اهرم مورد نیاز: {res.get('min_leverage_required', 1)}x\n\n"
             f"اهرم مورد نظر را انتخاب کنید:"
@@ -2656,10 +2726,19 @@ class TradingBot:
         return WIZ_LEVERAGE
 
     async def wiz_leverage(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await query.answer()
-        context.user_data["trade_wizard"]["leverage"] = int(query.data.split('|')[2])
-        return await self._wiz_show_type(update, context)
+        try:
+            query = update.callback_query
+            await query.answer()
+            context.user_data["trade_wizard"]["leverage"] = int(query.data.split('|')[2])
+            return await self._wiz_show_type(update, context)
+        except Exception as e:
+            logger.error(f"Trade wizard wiz_leverage error: {e}", exc_info=True)
+            try:
+                await update.effective_message.reply_text(f"❌ خطا در ویزارد معامله: {e}")
+            except Exception:
+                pass
+            context.user_data.pop("trade_wizard", None)
+            return ConversationHandler.END
 
     async def _wiz_show_type(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = context.user_data["trade_wizard"]
@@ -2668,29 +2747,38 @@ class TradingBot:
             [InlineKeyboardButton("🛒 Market (آنی صرافی)", callback_data="TRD|TYPE|market")],
             [InlineKeyboardButton("🔙 بازگشت", callback_data="TRD|BACK|LEVERAGE"), InlineKeyboardButton("❌ لغو", callback_data="TRD|CANCEL")]
         ]
-        msg = f"🛰 **گام ۶: نوع سفارش**\n\nخلاصه: {data['symbol']} | اهرم {data.get('leverage', 1)}x\n\nچگونه مایل به ورود هستید؟"
+        msg = f"🛰 <b>گام ۶: نوع سفارش</b>\n\nخلاصه: {data['symbol']} | اهرم {data.get('leverage', 1)}x\n\nچگونه مایل به ورود هستید؟"
         if update.callback_query: await update.callback_query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
         else: await update.effective_message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
         return WIZ_TYPE
 
     async def wiz_type(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await query.answer()
-        context.user_data["trade_wizard"]["type"] = query.data.split('|')[2]
-        return await self.wiz_confirm_screen(update, context)
+        try:
+            query = update.callback_query
+            await query.answer()
+            context.user_data["trade_wizard"]["type"] = query.data.split('|')[2]
+            return await self.wiz_confirm_screen(update, context)
+        except Exception as e:
+            logger.error(f"Trade wizard wiz_type error: {e}", exc_info=True)
+            try:
+                await update.effective_message.reply_text(f"❌ خطا در ویزارد معامله: {e}")
+            except Exception:
+                pass
+            context.user_data.pop("trade_wizard", None)
+            return ConversationHandler.END
 
     async def wiz_confirm_screen(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = context.user_data["trade_wizard"]
         emoji = "🟢 LONG" if data['side'] == 'buy' else "🔴 SHORT"
         msg = (
-            f"📋 **تاییدیه نهایی معامله**\n"
+            f"📋 <b>تاییدیه نهایی معامله</b>\n"
             f"━━━━━━━━━━━━━━\n"
-            f"🔹 **بازار:** {data['market'].upper()}\n"
-            f"🔹 **نماد:** {data['symbol']}\n"
-            f"🔹 **جهت:** {emoji}\n"
-            f"🔹 **مارجین:** ${data['margin']}\n"
-            f"🔹 **اهرم:** {data.get('leverage', 1)}x\n"
-            f"🔹 **نوع اردر:** {data['type'].upper()}\n"
+            f"🔹 <b>بازار:</b> {data['market'].upper()}\n"
+            f"🔹 <b>نماد:</b> {data['symbol']}\n"
+            f"🔹 <b>جهت:</b> {emoji}\n"
+            f"🔹 <b>مارجین:</b> ${data['margin']}\n"
+            f"🔹 <b>اهرم:</b> {data.get('leverage', 1)}x\n"
+            f"🔹 <b>نوع اردر:</b> {data['type'].upper()}\n"
             f"━━━━━━━━━━━━━━\n"
             f"آیا از اجرای معامله اطمینان دارید؟"
         )
@@ -2704,41 +2792,48 @@ class TradingBot:
         return WIZ_CONFIRM
 
     async def wiz_execute(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await query.answer()
-        data = context.user_data["trade_wizard"]
-        
-        await query.edit_message_text("⏳ در حال ارسال اردر به موتور اجرایی...")
-        
-        # Build Request
-        req = TradeRequest(
-            symbol=data["symbol"],
-            amount=data["margin"], # ExecutionEngine handles conversion if needed
-            leverage=data.get("leverage", 1),
-            side=data["side"],
-            market_type=data["market"],
-            user_id=update.effective_user.id
-        )
-        
-        if data["type"] == 'snipe':
-            # Integrate with Snipe logic
-            await self._start_snipe(update, context, data["symbol"], data["side"], amount=data["margin"], leverage=data["leverage"])
-        else:
-            res = await self.execution_engine.execute(req)
-            if res.success:
-                await query.edit_message_text(f"✅ معامله با موفقیت انجام شد!\nTicket: {res.order_id}")
+        try:
+            query = update.callback_query
+            await query.answer()
+            data = context.user_data["trade_wizard"]
+            
+            await query.edit_message_text("⏳ در حال ارسال اردر به موتور اجرایی...")
+            
+            req = TradeRequest(
+                symbol=data["symbol"],
+                amount=data["margin"],
+                leverage=data.get("leverage", 1),
+                side=data["side"],
+                market_type=data["market"],
+                user_id=update.effective_user.id
+            )
+            
+            if data["type"] == 'snipe':
+                await self._start_snipe(update, context, data["symbol"], data["side"], amount=data["margin"], leverage=data["leverage"])
             else:
-                msg = f"❌ **خطا در صرافی:**\n{res.message}"
-                keyboard = [
-                    [InlineKeyboardButton("💰 افزایش مارجین (+10$)", callback_data=f"TRD|FIX|MARGIN|{data['margin']+10}")],
-                    [InlineKeyboardButton("⚙️ کاهش اهرم به حداقل", callback_data="TRD|FIX|MINLEV")],
-                    [InlineKeyboardButton("❌ انصراف", callback_data="TRD|CANCEL")]
-                ]
-                await query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard))
-                return WIZ_CONFIRM # Stay in confirm or custom state? Let's end or stay.
-                
-        context.user_data.pop("trade_wizard", None)
-        return ConversationHandler.END
+                res = await self.execution_engine.execute(req)
+                if res.success:
+                    await query.edit_message_text(f"✅ معامله با موفقیت انجام شد!\nTicket: {res.order_id}")
+                else:
+                    msg = f"❌ خطا در صرافی:\n{res.message}"
+                    keyboard = [
+                        [InlineKeyboardButton("💰 افزایش مارجین (+10$)", callback_data=f"TRD|FIX|MARGIN|{data['margin']+10}")],
+                        [InlineKeyboardButton("⚙️ کاهش اهرم به حداقل", callback_data="TRD|FIX|MINLEV")],
+                        [InlineKeyboardButton("❌ انصراف", callback_data="TRD|CANCEL")]
+                    ]
+                    await query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard))
+                    return WIZ_CONFIRM
+                    
+            context.user_data.pop("trade_wizard", None)
+            return ConversationHandler.END
+        except Exception as e:
+            logger.error(f"Trade wizard wiz_execute error: {e}", exc_info=True)
+            try:
+                await update.effective_message.reply_text(f"❌ خطا در اجرای معامله: {e}")
+            except Exception:
+                pass
+            context.user_data.pop("trade_wizard", None)
+            return ConversationHandler.END
 
     async def wiz_cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Cancels the wizard."""
@@ -3028,7 +3123,14 @@ class TradingBot:
                     if self.futures_exchange.id == 'kucoin':
                          params = {'stopPrice': sl_price, 'type': 'stop'}
                     
-                    await asyncio.to_thread(self.futures_exchange.create_order, symbol, 'limit', sl_side, total_vol_calc, sl_price, params)
+                    for _attempt in range(3):
+                        try:
+                            await asyncio.to_thread(self.futures_exchange.create_order, symbol, 'limit', sl_side, total_vol_calc, sl_price, params)
+                            break
+                        except Exception as _e:
+                            logger.warning(f"SL order attempt {_attempt+1}/3 failed for {symbol}: {_e}")
+                            if _attempt < 2: await asyncio.sleep(2)
+                            else: raise
                     msg_sl = f"✅ حد ضرر در {sl_price} تنظیم شد."
                 except Exception as e:
                     msg_sl = f"⚠️ خطا در تنظیم خودکار حد ضرر: {e}"
@@ -3063,7 +3165,7 @@ class TradingBot:
                 await self.app.bot.send_message(
                     chat_id=self.admin_id, 
                     text=message, 
-                    parse_mode=ParseMode.MARKDOWN,
+                    parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup
                 )
             except Exception as e:
@@ -3104,7 +3206,7 @@ class TradingBot:
 
     async def start_auto_gln_scanner(self):
         """Starts GLN for limited symbols (AUTO_SYMBOLS)."""
-        msg = "🤖 **شروع اسکن خودکار GLN**\n"
+        msg = "🤖 <b>شروع اسکن خودکار GLN</b>\n"
         for symbol_unfmt in AUTO_SYMBOLS:
             symbol = symbol_unfmt.replace('USDT', '/USDT:USDT')
             if symbol not in self.gln_strategies:
@@ -3373,7 +3475,7 @@ class TradingBot:
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Show Welcome with main menu keyboard
         msg = (
-            "🚀 **به ربات پیشرفته Spider خوش آمدید!**\n\n"
+            "🚀 <b>به ربات پیشرفته Spider خوش آمدید!</b>\n\n"
             "من دستیار هوشمند شما برای معامله در بازارهای Crypto و Forex هستم.\n"
             "لطفاً برای شروع یکی از گزینه‌های زیر را انتخاب کنید:"
         )
@@ -3583,11 +3685,11 @@ class TradingBot:
             results.append("⚠️ JobQueue: Not available")
         
         # Format output
-        msg = "🔍 **Self-Test Results**\n━━━━━━━━━━━━━━━━━━━━\n"
+        msg = "🔍 <b>Self-Test Results</b>\n━━━━━━━━━━━━━━━━━━━━\n"
         msg += "\n".join(results)
         msg += "\n━━━━━━━━━━━━━━━━━━━━"
         
-        await update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+        await update.effective_message.reply_text(msg, parse_mode=ParseMode.HTML)
 
     async def where_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Displays current execution environment and uptime (Persian)."""
@@ -3630,27 +3732,27 @@ class TradingBot:
                 token_type_label = "⚠️ LEGACY/OTHER"
 
             msg = (
-                f"📍 **اطلاعات اجرای ربات (Spider)**\n"
+                f"📍 <b>اطلاعات اجرای ربات (Spider)</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"💎 **نسخه:** `{BOT_VERSION}`\n"
-                f"🏗 **زمان بیلد:** `{BUILD_TIMESTAMP}`\n"
-                f"👑 **نقش (ROLE):** `{'MASTER' if self.is_master else 'STANDBY'}`\n"
-                f"🛡 **حالت (MODE):** `{mode}`\n"
-                f"🚦 **دسترسی:** {perm_labels.get(mode, 'Unknown')}\n"
-                f"🏠 **محیط:** {env_labels.get(self.run_env, self.run_env)}\n"
-                f"🔑 **توکن:** `{token_type_label}` (`{token_fp}`)\n"
-                f"🔢 **PID:** `{self.pid}`\n"
-                f"🖥 **Host:** `{self.hostname}`\n"
-                f"⏱ **فعالیت:** {uptime_str}\n"
-                f"🖥 **هاست:** `{self.hostname}`\n"
-                f"👤 **کاربر:** `{self.username}`\n"
-                f"🔢 **شناسه (PID):** `{self.pid}`\n"
-                f"📂 **مسیر پروژه:** `{cwd}`\n"
-                f"🕒 **آخرین بررسی:** `{now_str}`\n"
+                f"💎 <b>نسخه:</b> <code>{BOT_VERSION}</code>\n"
+                f"🏗 <b>زمان بیلد:</b> <code>{BUILD_TIMESTAMP}</code>\n"
+                f"👑 <b>نقش (ROLE):</b> <code>{'MASTER' if self.is_master else 'STANDBY'}</code>\n"
+                f"🛡 <b>حالت (MODE):</b> <code>{mode}</code>\n"
+                f"🚦 <b>دسترسی:</b> {perm_labels.get(mode, 'Unknown')}\n"
+                f"🏠 <b>محیط:</b> {env_labels.get(self.run_env, self.run_env)}\n"
+                f"🔑 <b>توکن:</b> <code>{token_type_label}</code> (<code>{token_fp}</code>)\n"
+                f"🔢 <b>PID:</b> <code>{self.pid}</code>\n"
+                f"🖥 <b>Host:</b> <code>{self.hostname}</code>\n"
+                f"⏱ <b>فعالیت:</b> {uptime_str}\n"
+                f"🖥 <b>هاست:</b> <code>{self.hostname}</code>\n"
+                f"👤 <b>کاربر:</b> <code>{self.username}</code>\n"
+                f"🔢 <b>شناسه (PID):</b> <code>{self.pid}</code>\n"
+                f"📂 <b>مسیر پروژه:</b> <code>{cwd}</code>\n"
+                f"🕒 <b>آخرین بررسی:</b> <code>{now_str}</code>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
                 f"✅ سیستم در وضعیت {'عملیاتی' if self.is_master else 'آماده‌باش (Wait)'} است."
             )
-            await update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+            await update.effective_message.reply_text(msg, parse_mode=ParseMode.HTML)
         except Exception as e:
             logger.error(f"Error in where_command: {e}")
     async def _watchdog_check_once(self):

@@ -66,4 +66,4 @@ SILENT_END_HOUR = int(os.getenv('SILENT_END_HOUR', '7'))
 SILENT_ENABLED = os.getenv('SILENT_ENABLED', 'True').lower() in ('true', '1', 'yes')
 
 # Digest Reporter
-DIGEST_INTERVAL = int(os.getenv('DIGEST_INTERVAL', '60'))      # minutes
+DIGEST_INTERVAL = int(os.getenv('DIGEST_INTERVAL', '240'))     # minutes (4h default)

@@ -146,7 +146,7 @@ class GLNStrategy:
         self.save_state()
         
         # Send initial notification (legacy format for compatibility)
-        await self.send_notification(f"🚀 **موتور GLN روشن شد!**\nنماد: {self.symbol}\nاهرم: {self.leverage}x")
+        await self.send_notification(f"🚀 <b>موتور GLN روشن شد!</b>\nنماد: {self.symbol}\nاهرم: {self.leverage}x")
 
     async def calculate_daily_levels(self):
         """Fetches daily OHLCV to find PDH, PDL, PDC."""
@@ -173,7 +173,7 @@ class GLNStrategy:
             gap_percent = ((self.today_open - self.pdc) / self.pdc) * 100
             
             msg = (
-                f"📊 **تحلیل روزانه GLN**\n"
+                f"📊 <b>تحلیل روزانه GLN</b>\n"
                 f"سقف دیروز (PDH): {self.pdh}\n"
                 f"کف دیروز (PDL): {self.pdl}\n"
                 f"بسته دیروز (PDC): {self.pdc}\n"
@@ -350,7 +350,7 @@ class GLNStrategy:
 
                         self.is_q_channel_set = True
                         msg = (
-                            f"🎰 **کانال Q ثبت شد (کندل ۱۸)**\n"
+                            f"🎰 <b>کانال Q ثبت شد (کندل ۱۸)</b>\n"
                             f"سقف (QH): {self.q_high}\n"
                             f"کف (QL): {self.q_low}\n"
                             f"منتظر شکست (Breakout) یا برگشت (Reversal)..."
@@ -375,7 +375,7 @@ class GLNStrategy:
         if dist < 0.0005: # 0.05% tolerance
             self.gap_filled = True
             gap_status = "FILLED"
-            await self.send_notification(f"✅ **گپ پر شد!** (در کندل {candle_num})\nاستراتژی: رنج / بازگشت (Reversal)")
+            await self.send_notification(f"✅ <b>گپ پر شد!</b> (در کندل {candle_num})\nاستراتژی: رنج / بازگشت (Reversal)")
             
             # Report Gap Status to Event Reporter (report() takes event_type, data dict only)
             if self.event_reporter:
@@ -386,7 +386,7 @@ class GLNStrategy:
         else:
             gap_status = "OPEN"
             if candle_num == 18:
-                await self.send_notification(f"⚠️ **گپ پر نشد!** (پایان کندل ۱۸)\nاستراتژی: روند قدرتمند (Trend) در جهت گپ")
+                await self.send_notification(f"⚠️ <b>گپ پر نشد!</b> (پایان کندل ۱۸)\nاستراتژی: روند قدرتمند (Trend) در جهت گپ")
                 
                 # Report Gap Status to Event Reporter (report() takes event_type, data dict only)
                 if self.event_reporter:
@@ -488,7 +488,7 @@ class GLNStrategy:
         if not res.success:
             logger.warning(f"🚫 GLN Signal blocked for {self.symbol}: {res.message}")
             if "Risk Engine" in res.message:
-                await self.send_notification(f"🛡️ **سیگنال GLN توسط مدیریت ریسک مسدود شد**\nعلت: {res.message}")
+                await self.send_notification(f"🛡️ <b>سیگنال GLN توسط مدیریت ریسک مسدود شد</b>\nعلت: {res.message}")
             return
 
         # 2. Calculate SL/TP (STRUCTURAL)
@@ -539,7 +539,7 @@ class GLNStrategy:
                     ai_emoji = "🤖⚖️ Neutral"
                     
                 ai_msg = (
-                    f"🧠 **تحلیل هوشمند:**\n"
+                    f"🧠 <b>تحلیل هوشمند:</b>\n"
                     f"   • Trend: {trend}\n"
                     f"   • RSI: {rsi:.1f}\n"
                     f"   • AI Score: {ai_score:.2f} {ai_emoji}\n"
@@ -552,7 +552,7 @@ class GLNStrategy:
         direction = "LONG (BUY)" if side == 'buy' else "SHORT (SELL)"
         
         msg = (
-            f"{emoji} **سیگنال {direction}** ✅ **اجرا شد**\n\n"
+            f"{emoji} <b>سیگنال {direction}</b> ✅ <b>اجرا شد</b>\n\n"
             f"⚡ علت: {reason}\n"
             f"📍 نقطه ورود: {current_price}\n"
             f"🚫 حد ضرر (SL): {sl_price:.2f}\n"
@@ -562,7 +562,7 @@ class GLNStrategy:
             f"💵 مارجین: {margin}$\n"
             f"🎰 اهرم: {leverage}x\n"
             f"📦 حجم پوزیشن: {volume:.4f} {self.symbol.split('/')[0]}\n"
-            f"🆔 سفارش: `{res.order_id if res.order_id else 'N/A'}`"
+            f"🆔 سفارش: <code>{res.order_id if res.order_id else 'N/A'}</code>"
         )
         
         logger.info(f"Signal Executed: {side} @ {current_price}")
@@ -711,7 +711,7 @@ class GLNStrategy:
                 gap_filled=False
             )
         
-        await self.send_notification(f"♻️ **ریست روزانه QGLN**\nنماد: {self.symbol}\nتاریخ: {reset_date}")
+        await self.send_notification(f"♻️ <b>ریست روزانه QGLN</b>\nنماد: {self.symbol}\nتاریخ: {reset_date}")
     
     def update_registry_state(self, candle_num, current_price):
         """Updates scanner registry with current QGLN state."""
@@ -811,7 +811,7 @@ class GLNStrategy:
         state_label = state_labels.get(state, state)
         
         lines = [
-            f"🕒 **وضعیت QGLN**",
+            f"🕒 <b>وضعیت QGLN</b>",
             f"⏰ زمان NY: {ny_time_str}",
             f"📊 وضعیت سشن: {state_label}",
             f"🕯️ کندل: {candle_index}/18"
@@ -877,16 +877,16 @@ class GLNStrategy:
             zone = "در حال تشکیل کانال (Tracking)"
 
         return (
-            f"🤖 **وضعیت استراتژی GLN (Crypto)**\n"
-            f"نماد: `{self.symbol}`\n"
+            f"🤖 <b>وضعیت استراتژی GLN (Crypto)</b>\n"
+            f"نماد: <code>{self.symbol}</code>\n"
             f"وضعیت: {status_code}\n"
             f"پوزیشن: {pos_status}\n"
-            f"⏱ پیشرفت القای Q: `{self.q_probability}%` (کندل {self.candle_count}/18)\n"
+            f"⏱ پیشرفت القای Q: <code>{self.q_probability}%</code> (کندل {self.candle_count}/18)\n"
             f"📏 کانال Q:\n"
-            f"   🔼 سقف: `{self.q_high}`\n"
-            f"   🔽 کف: `{self.q_low}`\n"
-            f"📍 قیمت فعلی: `{current_price}`\n"
-            f"🌐 ناحیه: **{zone}**\n"
+            f"   🔼 سقف: <code>{self.q_high}</code>\n"
+            f"   🔽 کف: <code>{self.q_low}</code>\n"
+            f"📍 قیمت فعلی: <code>{current_price}</code>\n"
+            f"🌐 ناحیه: <b>{zone}</b>\n"
             f"🛡 گپ: {'✅ پر شده' if self.gap_filled else '❌ باز'}"
         )
     
