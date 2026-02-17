@@ -1,0 +1,45 @@
+﻿==========================================
+   SwitchToVPS (NEW ROBUST SYSTEM)
+==========================================
+[1/6] Loading vps_config.env...
+[1/6] Stopping Local Bot Surgically...
+Killing local PID:  7788
+cmd : ERROR: Input redirection is not supported, exiting the process immediately.
+At line:1 char:1
++ cmd /c "SwitchToVPS_NEW.bat _main" > switch_vps_verification_final.lo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR: Input re...ss immediately.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[2/6] Creating Deployment Zip (Excluding heavy DBs)...
+[3/6] Uploading to VPS (87.106.210.120)...
+
+deploy_package.zip        | 4 kB |   4.0 kB/s | ETA: 00:00:24 |   3%
+deploy_package.zip        | 100 kB | 100.5 kB/s | ETA: 00:00:00 | 100%
+
+deploy_vps.ps1            | 3 kB |   3.1 kB/s | ETA: 00:00:00 | 100%
+[4/6] Remote Deployment Triggered...
+------------------------------------------
+
+>>> Remote [4/6]: Stopping existing bot process surgically...
+Killing Process ID: 6052
+
+
+__GENUS          : 2
+__CLASS          : __PARAMETERS
+__SUPERCLASS     : 
+__DYNASTY        : __PARAMETERS
+__RELPATH        : 
+__PROPERTY_COUNT : 1
+__DERIVATION     : {}
+__SERVER         : 
+__NAMESPACE      : 
+__PATH           : 
+ReturnValue      : 0
+PSComputerName   : 
+
+
+>>> Remote [5/6]: Extracting update & Preserving VPS Data...
+
+>>> Remote [6/6]: Starting Bot & Undeniable Health-Check...
+Bot triggered. Waiting 10s for initialization...

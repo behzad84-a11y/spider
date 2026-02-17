@@ -1,0 +1,116 @@
+﻿==========================================
+   SwitchToVPS (NEW ROBUST SYSTEM)
+==========================================
+[1/6] Loading vps_config.env...
+[1/6] Stopping Local Bot Surgically...
+Killing local PID:  1880
+cmd : ERROR: Input redirection is not supported, exiting the process immediately.
+At line:1 char:1
++ cmd /c "SwitchToVPS_NEW.bat _main" > switch_vps_final_proof.log 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR: Input re...ss immediately.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[2/6] Creating Deployment Zip (Excluding heavy DBs)...
+[3/6] Uploading to VPS (87.106.210.120)...
+
+deploy_package.zip        | 4 kB |   4.0 kB/s | ETA: 00:00:24 |   3%
+deploy_package.zip        | 100 kB | 100.5 kB/s | ETA: 00:00:00 | 100%
+
+deploy_vps.ps1            | 3 kB |   3.1 kB/s | ETA: 00:00:00 | 100%
+[4/6] Remote Deployment Triggered...
+------------------------------------------
+
+>>> Remote [4/6]: Stopping existing bot process surgically...
+Killing Process ID: 1568
+
+
+__GENUS          : 2
+__CLASS          : __PARAMETERS
+__SUPERCLASS     : 
+__DYNASTY        : __PARAMETERS
+__RELPATH        : 
+__PROPERTY_COUNT : 1
+__DERIVATION     : {}
+__SERVER         : 
+__NAMESPACE      : 
+__PATH           : 
+ReturnValue      : 0
+PSComputerName   : 
+
+
+>>> Remote [5/6]: Extracting update & Preserving VPS Data...
+
+>>> Remote [6/6]: Starting Bot & Undeniable Health-Check...
+Bot triggered. Waiting 10s for initialization...
+PROCESS VERIFIED: Bot is active (PID: 5236)
+
+>>> Latest VPS Log Output (bot.log):
+WARNING: bot.log is locked by another process. Logging to console only.
+CRITICAL ERROR: 'charmap' codec can't encode character '\U0001f6d1' in position 2: character maps to <undefined>
+[Sat 02/14/2026  0:23:08.12] Starting Bot (Detached Mode)... 
+!!! STARTING BOT VERSION DEBUG 999 !!!
+WARNING: bot.log is locked by another process. Logging to console only.
+CRITICAL ERROR: 'charmap' codec can't encode character '\U0001f6d1' in position 2: character maps to <undefined>
+[Sat 02/14/2026  0:23:12.20] Starting Bot (Detached Mode)... 
+!!! STARTING BOT VERSION DEBUG 999 !!!
+WARNING: bot.log is locked by another process. Logging to console only.
+CRITICAL ERROR: 'charmap' codec can't encode character '\U0001f6d1' in position 2: character maps to <undefined>
+[Sat 02/14/2026  0:23:21.19] Starting Bot (Detached Mode)... 
+!!! STARTING BOT VERSION DEBUG 999 !!!
+[Sat 02/14/2026  1:02:05.12] Starting Bot (Detached Mode)... 
+[Sat 02/14/2026  1:02:11.20] Starting Bot (Detached Mode)... 
+!!! STARTING BOT VERSION DEBUG 999 !!!
+WARNING: bot.log is locked by another process. Logging to console only.
+CRITICAL ERROR: 'charmap' codec can't encode character '\U0001f6d1' in position 2: character maps to <undefined>
+[Sat 02/14/2026  1:02:17.13] Starting Bot (Detached Mode)... 
+!!! STARTING BOT VERSION DEBUG 999 !!!
+[Sat 02/14/2026  1:04:46.14] Starting Bot (Detached Mode)... 
+!!! STARTING BOT VERSION DEBUG 999 !!!
+[Sat 02/14/2026  1:04:55.12] Starting Bot (Detached Mode)... 
+!!! STARTING BOT VERSION DEBUG 999 !!!
+WARNING: bot.log is locked by another process. Logging to console only.
+
+CRITICAL: Master instance already active on WIN-7P0UMOTMO8K.
+Exiting to prevent duplicate trades.
+
+[Sat 02/14/2026  1:05:00.13] Starting Bot (Detached Mode)... 
+!!! STARTING BOT VERSION DEBUG 999 !!!
+
+>>> Latest VPS Error Log (bot_error.log):
+2026-02-14 01:02:41,339 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:02:51,363 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:03:01,395 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:03:11,436 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:03:21,464 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:03:31,493 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:03:41,517 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:03:51,552 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:04:01,587 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:04:11,609 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:04:21,632 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:04:31,662 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+2026-02-14 01:04:41,686 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getUpdates "HTTP/1.1 200 OK"
+[Sat 02/14/2026  1:04:45.88] Bot exited. Restarting in 10s... 
+fatal: bad revision 'HEAD'
+2026-02-14 01:04:49,183 - __main__ - INFO - INITIALIZING BOT FOR EXCHANGE: COINEX
+2026-02-14 01:04:49,206 - __main__ - INFO - ENV: Detected environment as LOCAL (Host: WIN-7P0UMOTMO8K, User: administrator)
+[Sat 02/14/2026  1:04:50.84] Bot exited. Restarting in 10s... 
+fatal: bad revision 'HEAD'
+2026-02-14 01:04:58,112 - __main__ - INFO - INITIALIZING BOT FOR EXCHANGE: COINEX
+2026-02-14 01:04:58,131 - __main__ - INFO - ENV: Detected environment as LOCAL (Host: WIN-7P0UMOTMO8K, User: administrator)
+C:\Users\Administrator\ok\spider_trading_bot.py:2938: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+  wiz_trade_handler = ConversationHandler(
+C:\Users\Administrator\ok\spider_trading_bot.py:2971: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+  qgln_conv_handler = ConversationHandler(
+2026-02-14 01:04:59,001 - __main__ - INFO - Bot starting polling...
+2026-02-14 01:04:59,185 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8583481056:AAHi9mKds-q_vitPMRAqKR_YTMzc0r7igQU/getMe "HTTP/1.1 200 OK"
+2026-02-14 01:04:59,186 - __main__ - CRITICAL - CRITICAL: ANOTHER INSTANCE IS ACTIVE! Master: WIN-7P0UMOTMO8K (PID: 1568)
+[Sat 02/14/2026  1:04:59.60] Bot exited. Restarting in 10s... 
+fatal: bad revision 'HEAD'
+
+SUCCESS: VPS DEPLOYMENT VERIFIED
+
+
+------------------------------------------
+[6/6] Final cleanup...

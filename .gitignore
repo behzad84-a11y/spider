@@ -1,0 +1,11 @@
+*.env
+vps_config.env
+__pycache__/
+*.db
+bot.log
+*.txt
+*.zip
+deploy/
+requirements.txt
+plink.exe
+pscp.exe

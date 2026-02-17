@@ -1,0 +1,5 @@
+$ReleaseDir = "C:\Users\Administrator\ok\releases\20260215_194228"
+$Runner = "$ReleaseDir\run_bot_vps.py"
+Write-Host "Starting runner: $Runner"
+Start-Process python -ArgumentList "-u `"$Runner`"" -WorkingDirectory $ReleaseDir -WindowStyle Hidden -RedirectStandardOutput "$ReleaseDir\runner_stdout.log" -RedirectStandardError "$ReleaseDir\runner_stderr.log"
+Write-Host "Runner started."

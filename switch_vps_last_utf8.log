@@ -1,0 +1,21 @@
+﻿cmd : The process cannot access the file because it is being used by another process.
+At line:1 char:1
++ cmd /c "SwitchToVPS_NEW.bat _main" > switch_vps_last.log 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (The process can...nother process.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+out-file : The process cannot access the file 'C:\trade\me\ok\switch_vps_last.log' because it is being used by another 
+process.
+At line:1 char:5
++ & { & 'C:\trade\me\ok\SwitchToVPS_NEW.bat' _main 2>&1 | Tee-Object -F ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OpenError: (:) [out-file], IOException
+    + FullyQualifiedErrorId : FileOpenFailure,Microsoft.PowerShell.Commands.OutFileCommand
+ 
+
+==========================================
+   SUCCESS: DEPLOYMENT COMPLETE
+==========================================
+[OK] Bot is now active on VPS.
+
