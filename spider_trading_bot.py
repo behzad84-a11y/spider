@@ -1,5 +1,5 @@
 import asyncio
-BOT_VERSION = "2.1.0-HARDENED"
+BOT_VERSION = "3.8.1-fix"  # Updated after P0-P3 stability pass
 BUILD_TIMESTAMP = "2026-02-14 01:41:12"
 import logging
 from typing import Any
@@ -3162,12 +3162,20 @@ class TradingBot:
                     keyboard = [[InlineKeyboardButton(label, callback_data=callback)]]
                     reply_markup = InlineKeyboardMarkup(keyboard)
                 
-                await self.app.bot.send_message(
-                    chat_id=self.admin_id, 
-                    text=message, 
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=reply_markup
-                )
+                try:
+                    await self.app.bot.send_message(
+                        chat_id=self.admin_id, 
+                        text=message, 
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=reply_markup
+                    )
+                except Exception:
+                    # Fallback: send without parse_mode if HTML parsing fails
+                    await self.app.bot.send_message(
+                        chat_id=self.admin_id, 
+                        text=message,
+                        reply_markup=reply_markup
+                    )
             except Exception as e:
                 logger.error(f"Failed to send telegram message: {e}")
 
@@ -3683,7 +3691,35 @@ class TradingBot:
                 results.append("⚠️ JobQueue: Not available (watchdog/delayed jobs disabled)")
         except Exception:
             results.append("⚠️ JobQueue: Not available")
-        
+
+        # 11. Smoke tests for core functions
+        try:
+            assert callable(self.wiz_start), "wiz_start not callable"
+            results.append("✅ Trade Wizard: wiz_start is callable")
+        except Exception as e:
+            results.append(f"❌ Trade Wizard: {e}")
+        try:
+            assert callable(self.qgln_entry), "qgln_entry not callable"
+            results.append("✅ QGLN: qgln_entry is callable")
+        except Exception as e:
+            results.append(f"❌ QGLN: {e}")
+        try:
+            assert isinstance(self.gln_strategies, dict), "gln_strategies not a dict"
+            results.append(f"✅ GLN Strategies: {len(self.gln_strategies)} active")
+        except Exception as e:
+            results.append(f"❌ GLN Strategies: {e}")
+        try:
+            assert callable(self.send_telegram_message), "send_telegram_message not callable"
+            results.append("✅ Message System: send_telegram_message OK")
+        except Exception as e:
+            results.append(f"❌ Message System: {e}")
+        try:
+            handler_groups = getattr(self.application, 'handlers', {})
+            total_handlers = sum(len(h) for h in handler_groups.values())
+            results.append(f"✅ Handlers: {total_handlers} registered in {len(handler_groups)} groups")
+        except Exception as e:
+            results.append(f"❌ Handlers: {e}")
+
         # Format output
         msg = "🔍 <b>Self-Test Results</b>\n━━━━━━━━━━━━━━━━━━━━\n"
         msg += "\n".join(results)
@@ -4355,6 +4391,9 @@ def validate_run_mode(env_type: str):
 
 if __name__ == '__main__':
     try:
+        # 0. Validate config
+        config.validate_config()
+        
         # 1. Resolve Token Strict
         BOT_TOKEN = resolve_bot_token_strict()
         

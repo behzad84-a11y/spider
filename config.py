@@ -67,3 +67,35 @@ SILENT_ENABLED = os.getenv('SILENT_ENABLED', 'True').lower() in ('true', '1', 'y
 
 # Digest Reporter
 DIGEST_INTERVAL = int(os.getenv('DIGEST_INTERVAL', '240'))     # minutes (4h default)
+
+
+def validate_config():
+    """Validate critical config values at startup. Raises SystemExit on failure."""
+    errors = []
+
+    if ENV_TYPE == 'VPS':
+        if not BOT_TOKEN_LIVE:
+            errors.append("VPS mode requires BOT_TOKEN_LIVE in .env")
+    elif ENV_TYPE == 'LOCAL':
+        if not BOT_TOKEN_DEV:
+            errors.append("LOCAL mode requires BOT_TOKEN_DEV in .env")
+
+    if EXCHANGE_TYPE == 'coinex':
+        if not COINEX_API_KEY or not COINEX_SECRET:
+            errors.append("CoinEx requires COINEX_API_KEY and COINEX_SECRET in .env")
+    elif EXCHANGE_TYPE == 'kucoin':
+        if not KUCOIN_API_KEY or not KUCOIN_SECRET or not KUCOIN_PASSPHRASE:
+            errors.append("KuCoin requires KUCOIN_API_KEY, KUCOIN_SECRET, and KUCOIN_PASSPHRASE in .env")
+
+    if BOT_TOKEN and not BOT_TOKEN_DEV and not BOT_TOKEN_LIVE:
+        errors.append("BOT_TOKEN is deprecated. Use BOT_TOKEN_DEV (LOCAL) or BOT_TOKEN_LIVE (VPS)")
+
+    if errors:
+        print("\n" + "=" * 60)
+        print("CONFIGURATION ERRORS - Bot cannot start:")
+        for err in errors:
+            print(f"  - {err}")
+        print("=" * 60 + "\n")
+        raise SystemExit(1)
+
+    print(f"[OK] Config validated: ENV_TYPE={ENV_TYPE}, EXCHANGE={EXCHANGE_TYPE}")
