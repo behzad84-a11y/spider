@@ -1,4 +1,0 @@
-2026-02-14 10:36:14,204 - __main__ - INFO - INITIALIZING BOT FOR EXCHANGE: COINEX
-2026-02-14 10:36:14,322 - __main__ - INFO - ENV: Detected environment as LOCAL (Host: DESKTOP-55PGB4L, User: behza)
-2026-02-14 10:36:14,323 - __main__ - INFO - SECURITY: Validating MODE=LIVE  against ENV=LOCAL
-2026-02-14 10:36:14,323 - __main__ - CRITICAL - 🛑 SECURITY LOCK: Mode 'LIVE ' is NOT ALLOWED on Local/Gravity environment! Aborting for safety.
